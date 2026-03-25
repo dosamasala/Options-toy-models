@@ -1,0 +1,40 @@
+import yfinance as yf
+import scipy
+import numpy as np
+
+aapl = yf.Ticker("AAPL")
+
+# history = aapl.history(period="1mo") #pandas data frame, tabel din care poti sa extragi "Close" sa zicem
+
+# closing_prices = history['Close'] #cu tot cu data intrarii
+
+# print(history.tail(5)) #pt coada adica ultimele 5 zile
+
+#-----------calcul volatilitate:
+stock = aapl
+
+history = stock.history(period="2y") #istoria pe 2 ani
+
+daily_log_returns = np.log(history['Close'] / history['Close'].shift(1)) #ln(pret_ieri/pret_azi - 1) pe fiecare data in parte
+
+daily_volatility = daily_log_returns.std() #sd a listei de mai sus, float
+
+volatilitate = daily_volatility * np.sqrt(252) #calculata intr-un an
+#nr de zile intr-un an (nu 504 pentru ca vrem volatilitatea pe o perioada de fix un an, asta e unitatea de masura), sqrt pt ca varianta
+
+#-----------Black-Scholes
+closing_prices = history['Close'] #istoria de pana acum
+pret_azi = closing_prices.iloc[-1] #ultima intrare
+
+S = pret_azi
+K = pret_azi
+T = 2.5 #2.5 ani timp pana la maturitate
+r = 0.05 #titluri de stat
+sigma = volatilitate
+
+d1 = (np.log(S / K) + (r + (sigma ** 2) / 2) * T) / (sigma * np.sqrt(T))
+d2 = d1 - sigma * np.sqrt(T)
+
+C = (S * scipy.stats.norm.cdf(d1)) - (K * np.exp(-r * T) *scipy.stats.norm.cdf(d2))
+
+print(C)
